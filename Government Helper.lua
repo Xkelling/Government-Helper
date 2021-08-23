@@ -114,13 +114,13 @@ function main()
 		end
 	end
 
-	if not checkServer(select(1, sampGetCurrentServerAddress())) then
+	--[[if not checkServer(select(1, sampGetCurrentServerAddress())) then
 		GHsms('Скрипт работает только на проекте '..sc..'Arizona RP')
 		thisScript():unload()
 		else
 		GHsms('Скрипт запущен! Активация - /gh')
 		lua_thread.create(checkOrg)
-	end
+	end]]
 
 	sampRegisterChatCommand('gh', function()
 		if not omenu.v then
@@ -602,7 +602,10 @@ function imgui.OnDrawFrame()
 			imgui.CenterTextColoredRGB('Все команды скрипта: '..sc..'/gha')
 			imgui.NewLine()
 			if imgui.CollapsingHeader(u8("Общие настройки")) then
-			imgui.Checkbox(u8'Авто-Обновление', update);imgui.SameLine();imgui.Vopros();imgui.Hint(u8'Будет чуть позже!')
+				if imgui.Checkbox(u8'Авто-Обновление', update) then
+					cfg.Settings.update = update.v
+					inicfg.save(cfg, 'Government Helper.ini')
+				end
 			end
 			if imgui.CollapsingHeader(u8("Отыгровки скрипта")) then
 			imgui.TextColoredRGB(sc..'Задержка между сообщениями в РП отыгровках:')
