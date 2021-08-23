@@ -86,7 +86,6 @@ local owner = false
 
 local owners = {
 	'Nether_King',
-	'Yuki_Rice',
 	'Actor_Monopoly'
 }
 
@@ -111,19 +110,17 @@ function main()
 	for i=1, #owners do
 		if nick == owners[i] and ip == '185.169.134.107' then
 			owner = true
-			GHsms('Вы вошли в режим Разработчика!')
+			log('Вы вошли в режим Разработчика!')
 		end
 	end
 
-	--[[if not checkServer(select(1, sampGetCurrentServerAddress())) then
+	if not checkServer(select(1, sampGetCurrentServerAddress())) then
 		GHsms('Скрипт работает только на проекте '..sc..'Arizona RP')
 		thisScript():unload()
 		else
 		GHsms('Скрипт запущен! Активация - /gh')
 		lua_thread.create(checkOrg)
-	end]]
-
-	GHsms('Скрипт запущен! New Version')
+	end
 
 	sampRegisterChatCommand('gh', function()
 		if not omenu.v then
@@ -395,9 +392,9 @@ function autoupdate(json_url, tag, url)
                 downloadUrlToFile(updatelink, thisScript().path,
                   function(id3, status1, p13, p23)
                     if status1 == dlstatus.STATUS_DOWNLOADINGDATA then
-                      print(string.format('Загружено %d из %d.', p13, p23))
+                      log(string.format('Загружено %d из %d.', p13, p23))
                     elseif status1 == dlstatus.STATUS_ENDDOWNLOADDATA then
-                      print('Загрузка обновления завершена.')
+                      log('Загрузка обновления завершена.')
                       sampAddChatMessage(('['..thisScript().name..'] {FFFFFF}Обновление завершено! Перезагружаю скрипт.'), mc)
                       goupdatestatus = true
                       lua_thread.create(function() wait(500) thisScript():reload() end)
@@ -414,13 +411,13 @@ function autoupdate(json_url, tag, url)
               )
             else
               update = false
-              sampAddChatMessage('['..thisScript().name..'] {FFFFFF}Обновление не требуется! Актуальная версия: '..thisScript().version, mc)
+              log('Обновление не требуется! Актуальная версия: '..thisScript().version)
             end
           end
         else
           sampAddChatMessage('['..thisScript().name..'] {FFFFFF}Не могу проверить обновление. Проверьте обновление в теме на BlastHack: '..url, mc)
 					sampAddChatMessage('['..thisScript().name..'] {FFFFFF}Ссылка на тему BlastHack продублирована в консоли SF', mc)
-					  log(': Ссылка на тему BlastHack: '..url)
+					  log('Ссылка на тему BlastHack: '..url)
           update = false
         end
       end
