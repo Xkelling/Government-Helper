@@ -1,7 +1,7 @@
 script_name    		('Government Helper')
 script_properties	("work-in-pause")
 script_author  		('Rice')
-script_version		('1.3')
+script_version		('1.2')
 
 require "moonloader"
 require 'lib.vkeys'
