@@ -52,7 +52,7 @@ local cfg = inicfg.load({
 		RP = true,
 		waitRP = 2.5,
 		sex = 1,
-		aupdate = false
+		aupdate = true
 	},
 	Binds_Name = {},
 	Binds_Action = {},
@@ -114,13 +114,13 @@ function main()
 		end
 	end
 
-	--[[if not checkServer(select(1, sampGetCurrentServerAddress())) then
+	if not checkServer(select(1, sampGetCurrentServerAddress())) then
 		GHsms('Скрипт работает только на проекте '..sc..'Arizona RP')
 		thisScript():unload()
 		else
 		GHsms('Скрипт запущен! Активация - /gh')
 		lua_thread.create(checkOrg)
-	end]]
+	end
 
 	sampRegisterChatCommand('gh', function()
 		if not omenu.v then
