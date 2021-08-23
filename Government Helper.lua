@@ -52,7 +52,7 @@ local cfg = inicfg.load({
 		RP = true,
 		waitRP = 2.5,
 		sex = 1,
-		update = false
+		aupdate = false
 	},
 	Binds_Name = {},
 	Binds_Action = {},
@@ -71,7 +71,7 @@ local rankAndNumber = imgui.ImBuffer(''..cfg.Settings.rankAndNumber,30)
 local RP = imgui.ImBool(cfg.Settings.RP)
 local waitRP = imgui.ImFloat(cfg.Settings.waitRP)
 local sex = imgui.ImInt(cfg.Settings.sex)
-local update = imgui.ImBool(cfg.Settings.update)
+local aupdate = imgui.ImBool(cfg.Settings.aupdate)
 local FirstSettings = imgui.ImBool(cfg.Settings.FirstSettings)
 local binder_delay = imgui.ImInt(2500)
 local text_binder = imgui.ImBuffer(65536)
@@ -602,8 +602,8 @@ function imgui.OnDrawFrame()
 			imgui.CenterTextColoredRGB('Все команды скрипта: '..sc..'/gha')
 			imgui.NewLine()
 			if imgui.CollapsingHeader(u8("Общие настройки")) then
-				if imgui.Checkbox(u8'Авто-Обновление', update) then
-					cfg.Settings.update = update.v
+				if imgui.Checkbox(u8'Авто-Обновление', aupdate) then
+					cfg.Settings.aupdate = aupdate.v
 					inicfg.save(cfg, 'Government Helper.ini')
 				end
 			end
@@ -1312,7 +1312,7 @@ function checklibs()
 	if not doesFileExist(getWorkingDirectory()..'/config/Government Helper.ini') then
 		if inicfg.save(cfg, 'Government Helper.ini') then log('Директория "Government Helper.ini" была создана!') end
 	end
-	if update.v then
+	if aupdate.v then
 		autoupdate("https://raw.githubusercontent.com/Xkelling/Government-Helper/main/update.ini", '['..string.upper(thisScript().name)..'] ', 'https://www.blast.hk/threads/98005/')
 	end
 	if not facheck then
