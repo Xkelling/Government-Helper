@@ -1,16 +1,17 @@
 script_name    		('Government Helper')
 script_properties	("work-in-pause")
 script_author  		('Rice')
-script_version		('1.2')
+script_version		('1.3')
 
 require "moonloader"
 require 'lib.vkeys'
-local dlstatus = require "moonloader".download_status
-local inicfg = require 'inicfg'
-local sampevcheck, sampev		= pcall(require, "lib.samp.events")
-local imguicheck, imgui	= pcall(require, "imgui")
-local facheck, fa	= pcall(require, "fAwesome5")
-local encodingcheck, encoding	= pcall(require, "encoding")
+local dlstatus 										= require "moonloader".download_status
+local inicfg 											= require 'inicfg'
+local sampevcheck, sampev					= pcall(require, "samp.events")
+local imguicheck, imgui						= pcall(require, "imgui")
+local facheck, fa									= pcall(require, "fAwesome5")
+--local memory      								= require 'memory'
+local encodingcheck, encoding			= pcall(require, "encoding")
 encoding.default = 'CP1251'
 u8 = encoding.UTF8
 
@@ -78,6 +79,7 @@ local text_binder = imgui.ImBuffer(65536)
 local text_ustav = imgui.ImBuffer(65536)
 local binder_name = imgui.ImBuffer(35)
 local ReasonUval = imgui.ImBuffer(50)
+local giverankInt = imgui.ImInt(1)
 local IDplayer = imgui.ImInt(0)
 ------------
 fileconfig = getWorkingDirectory()..'//config//Government Helper.ini'
@@ -85,8 +87,7 @@ local getRankInStats = false
 local owner = false
 
 local owners = {
-	'Nether_King',
-	'Actor_Monopoly'
+	'Quinrage_Cartel'
 }
 
 function main()
@@ -119,7 +120,7 @@ function main()
 		thisScript():unload()
 		else
 		GHsms('Скрипт запущен! Активация - /gh')
-		lua_thread.create(checkOrg)
+		checkOrg()
 	end
 
 	sampRegisterChatCommand('gh', function()
@@ -139,12 +140,12 @@ function main()
 		end
 	end)
 
-	sampRegisterChatCommand('ghm', function()
+	--[[sampRegisterChatCommand('ghm', function()
 		window.v = false
 		help.v = false
 		omenu.v = true
 		imgui.ShowCursor = true
-	end)
+	end)]]
 
 	if cfg.Settings.RP == true then
 		sampRegisterChatCommand('givepass', function(givepass_id)
@@ -351,22 +352,33 @@ function main()
 
 	while true do
 		wait(0)
-		if window.v or help.v then
+		if window.v or help.v or omenu.v then
 			imgui.Process = true
 			imgui.ShowCursor = true
-		elseif omenu.v then
-			imgui.Process = true
 		else
 			imgui.Process = false
 			imgui.ShowCursor = false
 		end
-		if omenu.v then
-			if testCheat('GC') then
-				imgui.ShowCursor = not imgui.ShowCursor
-				GHsms('Вы включили/выключили курсор.')
-			end
+		local result, id = sampGetPlayerIdOnTargetKey(VK_Q)
+		if result then
+			GHsms('Выбран игрок: '..sampGetPlayerNickname(id)..' ['..id..']')
+			IDplayer.v = id
+			window.v = false
+			help.v = false
+			omenu.v = true
+			imgui.ShowCursor = true
 		end
 	end
+end
+
+function sampGetPlayerIdOnTargetKey(key)
+	local result, ped = getCharPlayerIsTargeting(PLAYER_HANDLE)
+	if result then
+		if isKeyJustPressed(key) then
+			return sampGetPlayerIdByCharHandle(ped)
+		end
+	end
+	return false
 end
 
 function autoupdate(json_url, tag, url)
@@ -590,13 +602,6 @@ function imgui.OnDrawFrame()
 			imgui.EndChild()
 			imgui.EndPopup()
 		end
-		--[[if menu == 2 then
-			ustav = io.open(path, "r")
-			for line in ustav:lines() do
-			imgui.Text(line)
-			end
-			ustav:close()
-		end]]
 		if menu == 3 then
 			imgui.CenterTextColoredRGB(sc..'Настройки скрипта')
 			imgui.CenterTextColoredRGB('Все команды скрипта: '..sc..'/gha')
@@ -641,7 +646,7 @@ function imgui.OnDrawFrame()
 			imgui.SetCursorPosX((imgui.GetWindowWidth() - 90) / 2)
 			if imgui.Button(fa.ICON_FA_LINK..u8(" ВКонтакте"), imgui.ImVec2(90, 25)) then
 			GHsms('Ссылка скопирована в буфер обмена!')
-			setClipboardText("https://vk.com/xkelling")
+			setClipboardText("https://vk.com/id324119075")
 			end
 			end
 			imgui.NewLine()
@@ -689,7 +694,7 @@ function imgui.OnDrawFrame()
 			imgui.CenterTextColoredRGB(sc..'Список команд:')
 			imgui.CenterTextColoredRGB(sc..'/gh {FFFFFF}- Основное меню скрипта')
 			imgui.CenterTextColoredRGB(sc..'/gha {FFFFFF}- Список всех команд')
-			imgui.CenterTextColoredRGB(sc..'/ghm {FFFFFF}- Окно взаимодействия с игроками')
+			imgui.CenterTextColoredRGB(sc..'ПКМ + Q (по игроку) {FFFFFF}- Окно взаимодействия с игроками')
 			imgui.Separator()
 			imgui.CenterTextColoredRGB(sc..'/invite {FFFFFF}- Принять человека в организацию')
 			imgui.CenterTextColoredRGB(sc..'/uninvite {FFFFFF}- Уволить сотрудника из организации')
@@ -707,118 +712,123 @@ function imgui.OnDrawFrame()
 		imgui.End()
 	end
 
-	if omenu.v then
-		local sw, sh = getScreenResolution()
-		imgui.SetNextWindowPos(imgui.ImVec2((sw - 505) / 2, sh / 1.165), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-		imgui.Begin(u8'##menu2', _, imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.AlwaysAutoResize)
-			imgui.PushItemWidth(90)
-			imgui.InputInt(u8'ID игрока', IDplayer)
-			imgui.PopItemWidth()
-			if IDplayer.v > 999 then IDplayer.v = 999 end
-			if IDplayer.v < 0 then IDplayer.v = 0 end
-			imgui.BeginChild('##menu2Child', imgui.ImVec2(505, 85), true)
-				if imgui.Button(u8'Выгнать##menu2', imgui.ImVec2(160,20)) then
-					sampProcessChatInput('/expel '..tonumber(IDplayer.v)..' Н.П.П.')
-				end
-				imgui.SameLine()
-				if imgui.Button(u8'Выдать паспорт##menu2', imgui.ImVec2(160,20)) then
-					sampProcessChatInput('/givepass '..tonumber(IDplayer.v))
-				end
-				imgui.SameLine()
-				if imgui.Button(u8'Уволить гос. сотрудника##menu2', imgui.ImVec2(160,20)) then
-					imgui.OpenPopup(u8'Уволить##2menu2')
-				end
-				if imgui.Button(u8'Принять в орг.##menu2', imgui.ImVec2(160,20)) then
-					sampProcessChatInput('/invite '..tonumber(IDplayer.v))
-				end
-				imgui.SameLine()
-				if imgui.Button(u8'Уволить из орг.##menu2', imgui.ImVec2(160	,20)) then
-					imgui.OpenPopup(u8'Уволить##1menu2')
-				end
-				imgui.SameLine()
-				if imgui.Button(u8'Выдать выговор##menu2', imgui.ImVec2(160	,20)) then
-					imgui.OpenPopup(u8'Выговор##menu2')
-				end
-				if imgui.Button(u8'Снять выговор##menu2', imgui.ImVec2(160	,20)) then
-					sampProcessChatInput('/unfwarn '..tonumber(IDplayer.v))
-				end
-				imgui.SameLine()
-				if imgui.Button(u8'Изменить должность##menu2', imgui.ImVec2(160	,20)) then
-					imgui.OpenPopup(u8'Должность##menu2')
-				end
-				if imgui.BeginPopupModal(u8'Уволить##1menu2', _, imgui.WindowFlags.AlwaysAutoResize) then
-					imgui.PushItemWidth(150)
-					imgui.InputText(u8'Причина увольнения##Уволить из орг.', ReasonUval)
-					imgui.PopItemWidth()
-					if imgui.Button(u8'Отправить##Уволить из орг.', imgui.ImVec2(200, 20)) then
-						sampProcessChatInput('/uninvite '..tonumber(IDplayer.v)..' '..ReasonUval.v)
-						imgui.CloseCurrentPopup()
-						ReasonUval.v = ''
-					end
-					imgui.SameLine()
-					if imgui.Button(u8'Закрыть##Уволить из орг.', imgui.ImVec2(200, 20)) then
-						imgui.CloseCurrentPopup()
-						ReasonUval.v = ''
-					end
-					imgui.EndPopup()
-				end
-				if imgui.BeginPopupModal(u8'Уволить##2menu2', _, imgui.WindowFlags.AlwaysAutoResize) then
-					imgui.PushItemWidth(150)
-					imgui.InputText(u8'Причина увольнения##Уволить гос. сотрудника', ReasonUval)
-					imgui.PopItemWidth()
-					if imgui.Button(u8'Отправить##Уволить гос. сотрудника', imgui.ImVec2(200, 20)) then
-						sampProcessChatInput('/demoute '..tonumber(IDplayer.v)..' '..ReasonUval.v)
-						imgui.CloseCurrentPopup()
-						ReasonUval.v = ''
-					end
-					imgui.SameLine()
-					if imgui.Button(u8'Закрыть##Уволить гос. сотрудника', imgui.ImVec2(200, 20)) then
-						imgui.CloseCurrentPopup()
-						ReasonUval.v = ''
-					end
-					imgui.EndPopup()
-				end
-				if imgui.BeginPopupModal(u8'Выговор##menu2', _, imgui.WindowFlags.AlwaysAutoResize) then
-					imgui.PushItemWidth(150)
-					imgui.InputText(u8'Причина выговора##3menu2', ReasonUval)
-					imgui.PopItemWidth()
-					if imgui.Button(u8'Отправить##3menu2', imgui.ImVec2(200, 20)) then
-						sampProcessChatInput('/fwarn '..tonumber(IDplayer.v)..' '..ReasonUval.v)
-						imgui.CloseCurrentPopup()
-						ReasonUval.v = ''
-					end
-					imgui.SameLine()
-					if imgui.Button(u8'Закрыть##3menu2', imgui.ImVec2(200, 20)) then
-						imgui.CloseCurrentPopup()
-						ReasonUval.v = ''
-					end
-					imgui.EndPopup()
-				end
-				if imgui.BeginPopupModal(u8'Должность##menu2', _, imgui.WindowFlags.AlwaysAutoResize) then
-					imgui.PushItemWidth(30)
-					imgui.InputText(u8'Номер должности##4menu2', ReasonUval)
-					imgui.PopItemWidth()
-					if imgui.Button(u8'Отправить##4menu2', imgui.ImVec2(200, 20)) then
-						sampProcessChatInput('/giverank '..tonumber(IDplayer.v)..' '..ReasonUval.v)
-						imgui.CloseCurrentPopup()
-						ReasonUval.v = ''
-					end
-					imgui.SameLine()
-					if imgui.Button(u8'Закрыть##4menu2', imgui.ImVec2(200, 20)) then
-						imgui.CloseCurrentPopup()
-						ReasonUval.v = ''
-					end
-					imgui.EndPopup()
-				end
-			imgui.EndChild()
-			imgui.CenterTextColoredRGB('{868686}Курсор (?)');imgui.Hint(u8'Включить/выключить курсор - сочетания клавиш "GC"')
-			imgui.SetCursorPosX((imgui.GetWindowWidth() - 150) / 2)
-			if imgui.Button(u8'Закрыть##menu2', imgui.ImVec2(150,20)) then
-				omenu.v = false
-				imgui.ShowCursor = false
+if omenu.v then
+	local sw, sh = getScreenResolution()
+	imgui.SetNextWindowPos(imgui.ImVec2((sw - 505) / 2, sh / 1.140), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+	imgui.Begin(u8'##menu2', _, imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.AlwaysAutoResize)
+		imgui.PushItemWidth(90)
+		imgui.CenterText(sampGetPlayerNickname(IDplayer.v)..' ['..IDplayer.v..']')
+		imgui.PopItemWidth()
+		if IDplayer.v > 999 then IDplayer.v = 999 end
+		if IDplayer.v < 0 then IDplayer.v = 0 end
+		imgui.BeginChild('##menu2Child', imgui.ImVec2(505, 85), true)
+			if imgui.Button(u8'Выгнать##menu2', imgui.ImVec2(160,20)) then
+				sampProcessChatInput('/expel '..tonumber(IDplayer.v)..' Н.П.П.')
 			end
-		imgui.End()
-	end
+			imgui.SameLine()
+			if imgui.Button(u8'Выдать паспорт##menu2', imgui.ImVec2(160,20)) then
+				sampProcessChatInput('/givepass '..tonumber(IDplayer.v))
+			end
+			imgui.SameLine()
+			if imgui.Button(u8'Уволить гос. сотрудника##menu2', imgui.ImVec2(160,20)) then
+				imgui.OpenPopup(u8'Уволить##2menu2')
+			end
+			if imgui.Button(u8'Принять в орг.##menu2', imgui.ImVec2(160,20)) then
+				sampProcessChatInput('/invite '..tonumber(IDplayer.v))
+			end
+			imgui.SameLine()
+			if imgui.Button(u8'Уволить из орг.##menu2', imgui.ImVec2(160	,20)) then
+				imgui.OpenPopup(u8'Уволить##1menu2')
+			end
+			imgui.SameLine()
+			if imgui.Button(u8'Выдать выговор##menu2', imgui.ImVec2(160	,20)) then
+				imgui.OpenPopup(u8'Выговор##menu2')
+			end
+			if imgui.Button(u8'Снять выговор##menu2', imgui.ImVec2(160	,20)) then
+				sampProcessChatInput('/unfwarn '..tonumber(IDplayer.v))
+			end
+			imgui.SameLine()
+			if imgui.Button(u8'Изменить должность##menu2', imgui.ImVec2(160	,20)) then
+				imgui.OpenPopup(u8'Должность##menu2')
+			end
+			if imgui.BeginPopupModal(u8'Уволить##1menu2', _, imgui.WindowFlags.AlwaysAutoResize) then
+				imgui.PushItemWidth(150)
+				imgui.InputText(u8'Причина увольнения##Уволить из орг.', ReasonUval)
+				imgui.PopItemWidth()
+				if imgui.Button(u8'Отправить##Уволить из орг.', imgui.ImVec2(200, 20)) then
+					sampProcessChatInput('/uninvite '..tonumber(IDplayer.v)..' '..ReasonUval.v)
+					imgui.CloseCurrentPopup()
+					ReasonUval.v = ''
+				end
+				imgui.SameLine()
+				if imgui.Button(u8'Закрыть##Уволить из орг.', imgui.ImVec2(200, 20)) then
+					imgui.CloseCurrentPopup()
+					ReasonUval.v = ''
+				end
+				imgui.EndPopup()
+			end
+			if imgui.BeginPopupModal(u8'Уволить##2menu2', _, imgui.WindowFlags.AlwaysAutoResize) then
+				imgui.PushItemWidth(150)
+				imgui.InputText(u8'Причина увольнения##Уволить гос. сотрудника', ReasonUval)
+				imgui.PopItemWidth()
+				if imgui.Button(u8'Отправить##Уволить гос. сотрудника', imgui.ImVec2(200, 20)) then
+					sampProcessChatInput('/demoute '..tonumber(IDplayer.v)..' '..ReasonUval.v)
+					imgui.CloseCurrentPopup()
+					ReasonUval.v = ''
+				end
+				imgui.SameLine()
+				if imgui.Button(u8'Закрыть##Уволить гос. сотрудника', imgui.ImVec2(200, 20)) then
+					imgui.CloseCurrentPopup()
+					ReasonUval.v = ''
+				end
+				imgui.EndPopup()
+			end
+			if imgui.BeginPopupModal(u8'Выговор##menu2', _, imgui.WindowFlags.AlwaysAutoResize) then
+				imgui.PushItemWidth(150)
+				imgui.InputText(u8'Причина выговора##3menu2', ReasonUval)
+				imgui.PopItemWidth()
+				if imgui.Button(u8'Отправить##3menu2', imgui.ImVec2(200, 20)) then
+					sampProcessChatInput('/fwarn '..tonumber(IDplayer.v)..' '..ReasonUval.v)
+					imgui.CloseCurrentPopup()
+					ReasonUval.v = ''
+				end
+				imgui.SameLine()
+				if imgui.Button(u8'Закрыть##3menu2', imgui.ImVec2(200, 20)) then
+					imgui.CloseCurrentPopup()
+					ReasonUval.v = ''
+				end
+				imgui.EndPopup()
+			end
+			if imgui.BeginPopupModal(u8'Должность##menu2', _, imgui.WindowFlags.AlwaysAutoResize) then
+				imgui.PushItemWidth(70)
+				imgui.InputInt(u8'Номер должности##4menu2', giverankInt)
+				imgui.PopItemWidth()
+				if giverankInt.v > 9 then
+					giverankInt.v = 9
+				end
+				if giverankInt.v < 1 then
+					giverankInt.v = 1
+				end
+				if imgui.Button(u8'Отправить##4menu2', imgui.ImVec2(200, 20)) then
+					sampProcessChatInput('/giverank '..tonumber(IDplayer.v)..' '..giverankInt.v)
+					imgui.CloseCurrentPopup()
+					ReasonUval.v = ''
+				end
+				imgui.SameLine()
+				if imgui.Button(u8'Закрыть##4menu2', imgui.ImVec2(200, 20)) then
+					imgui.CloseCurrentPopup()
+					ReasonUval.v = ''
+				end
+				imgui.EndPopup()
+			end
+		imgui.EndChild()
+		imgui.SetCursorPosX((imgui.GetWindowWidth() - 150) / 2)
+		if imgui.Button(u8'Закрыть##menu2', imgui.ImVec2(150,20)) then
+			omenu.v = false
+			imgui.ShowCursor = false
+		end
+	imgui.End()
+end
 end
 
 function theme()
@@ -1203,7 +1213,7 @@ if sampevcheck then
 					wait(1000)
 					GHsms('Вы не в организации '..sc..'Правительство LS')
 					GHsms('Скрипт работает только в этой организации')
-					GHsms('Если вы считаете, что это ошибка - напишите разработчику '..sc..'vk.com/xkelling')
+					GHsms('Если вы считаете, что это ошибка - напишите разработчику '..sc..'vk.com/id324119075')
 					GHsms('Скрипт отключен...')
 					log('Скрипт отключен. Вы не в организации "Правительство LS"')
 					wait(100)
@@ -1348,3 +1358,10 @@ function checklibs()
 	end
 	return true
 end
+
+--[[if memory.tohex(getModuleHandle("samp.dll") + 0xBABE, 10, true ) == "E86D9A0A0083C41C85C0" then
+		sampIsLocalPlayerSpawned = function()
+				local res, id = sampGetPlayerIdByCharHandle(PLAYER_PED)
+				return sampGetGamestate() == 3 and res and sampGetPlayerAnimationId(id) ~= 0
+		end
+end]]
