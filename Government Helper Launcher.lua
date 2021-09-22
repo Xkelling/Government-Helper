@@ -1,7 +1,7 @@
 script_name    		('Government Helper')
 script_properties	("work-in-pause")
 script_author  		('Rice')
-script_version		('1.2')
+script_version		('1.3')
 
 require "moonloader"
 require 'lib.vkeys'
@@ -1443,7 +1443,7 @@ function checklibs()
 		if inicfg.save(cfg, 'Government Helper.ini') then log('Директория "Government Helper.ini" была создана!') end
 	end
 	if aupdate.v then
-		autoupdate("https://raw.githubusercontent.com/Xkelling/Government-Helper/main/update.ini", '['..string.upper(thisScript().name)..'] ', 'https://www.blast.hk/threads/98005/')
+		autoupdate("https://raw.githubusercontent.com/Xkelling/Government-Helper/main/updateLauncher.ini", '['..string.upper(thisScript().name)..'] ', 'https://www.blast.hk/threads/98005/')
 	end
 	if not facheck then
 		GHsms("Отсутствует библиотека fAwesome5. Пытаюсь её установить.")
