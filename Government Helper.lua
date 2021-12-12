@@ -1,7 +1,7 @@
 script_name    		('Government Helper')
 script_properties	("work-in-pause")
 script_author  		('Rice.')
-script_version		('1.4')
+script_version		('1.41')
 
 require "moonloader"
 require 'lib.vkeys'
@@ -29,6 +29,7 @@ local fa = {
 	['ICON_FA_SHARE'] = "\xef\x81\xa4",
 	['ICON_FA_QUESTION_CIRCLE'] = "\xef\x81\x99",
 	['ICON_FA_ARROWS_ALT'] = "\xef\x82\xb2",
+	['ICON_FA_COMMENTS'] = "\xef\x82\x86",
 	['ICON_FA_RETWEET'] = "\xef\x81\xb9"
 }
 
@@ -113,6 +114,10 @@ local cfg = inicfg.load({
 		x = 707,
 		y = 935
 	},
+	Color_Chat = {
+		r = 4282626093,
+		d = 4294940723
+	},
 	Binds_Name = {},
 	Binds_Action = {},
 	Binds_Deleay = {}
@@ -140,6 +145,8 @@ local ReasonUval = imgui.ImBuffer(50)
 local giverankInt = imgui.ImInt(1)
 local IDplayer = imgui.ImInt(0)
 local posX, posY = cfg.Pos.x, cfg.Pos.y
+local colorChatR = imgui.ImFloat4(imgui.ImColor(cfg.Color_Chat.r):GetFloat4())
+local colorChatD = imgui.ImFloat4(imgui.ImColor(cfg.Color_Chat.d):GetFloat4())
 ------------
 fileconfig = getWorkingDirectory()..'//config//Government Helper.ini'
 local getRankInStats = false
@@ -164,7 +171,7 @@ function main()
 
 	if not checkServer(select(1, sampGetCurrentServerAddress())) then
 		GHsms('Скрипт работает только на проекте '..sc..'Arizona RP')
-		thisScript():unload()
+		--thisScript():unload()
 	else
 		GHsms('Скрипт запущен! Активация - /gh')
 		checkOrg()
@@ -190,23 +197,37 @@ function main()
 
 	if cfg.Settings.RP == true then
 		sampRegisterChatCommand('givepass', function(givepass_id)
-			local givepass_id = givepass_id:match('(%d+)')
-			if tonumber(givepass_id) and sampIsPlayerConnected(tonumber(givepass_id)) then
-				lua_thread.create(function()
-					sampSendChat("/me {sex:достал|достала} чистое заявление с незаполненными полями и {sex:положил|положила} его перед человеком")
-					wait(waitRP.v * 1000)
-					sampSendChat("/todo Вам нужно будет заполнить все поля в заявление*передавая ручку человеку")
-					wait(waitRP.v * 1000)
-					sampSendChat("/givepass "..givepass_id)
-					wait(waitRP.v * 1000)
-					sampSendChat("/do Все нужные поля в заявление были заполнены.")
-					wait(waitRP.v * 1000)
-					sampSendChat("/me {sex:проверил|проверила} занесенные поля и {sex:занёс|занесла} их в паспорт")
-					wait(waitRP.v * 1000)
-					sampSendChat("/todo Хорошего дня!*передавая паспорт человеку")
-				end)
+			local givepass_id, givepass_pol = givepass_id:match('(%d+) (.+)')
+			if tonumber(givepass_id) and tostring(givepass_pol) and sampIsPlayerConnected(tonumber(givepass_id)) then
+				if givepass_pol == tostring('М') or givepass_pol == tostring('Ж') then
+					lua_thread.create(function()
+						givepass_id_pol = tostring(givepass_pol)
+						givepass_id_act = true
+						sampSendChat("/givepass "..givepass_id)
+						wait(500)
+						if givepass_est_pass then
+							givepass_est_pass = false
+						else
+							wait(waitRP.v * 1000)
+							sampSendChat("/me {sex:достал|достала} чистое заявление с незаполненными полями и {sex:положил|положила} его перед человеком")
+							wait(waitRP.v * 1000)
+							sampSendChat("/todo Вам нужно будет заполнить все поля в заявление*передавая ручку человеку")
+							wait(waitRP.v * 1000)
+							sampSendChat("/do Все нужные поля в заявление были заполнены.")
+							wait(waitRP.v * 1000)
+							sampSendChat("/me {sex:проверил|проверила} занесенные поля и {sex:занёс|занесла} их в паспорт")
+							wait(waitRP.v * 1000)
+							sampSendChat("/todo Хорошего дня!*передавая паспорт человеку")
+							givepass_id_act = false
+							givepass_id_act2 = false
+							givepass_id_act3 = false
+						end
+					end)
 				else
-				GHsms('Используй: /givepass [id]')
+					GHsms('Укажите пол: М или Ж')
+				end
+				else
+				GHsms('Используй: /givepass [id] [М/Ж]')
 			end
 		end)
 		else
@@ -497,24 +518,30 @@ function imgui.OnDrawFrame()
 		imgui.PushFont(fontsize501)
 		imgui.TextColoredRGB('{73b012}Government')
 		imgui.PopFont()
-		imgui.SetCursorPos(imgui.ImVec2(imgui.GetWindowWidth() - 40, 16))
+		imgui.SetCursorPos(imgui.ImVec2(imgui.GetWindowWidth() - 37, 5))
 		imgui.PushFont(fontsize30)
 		imgui.Text(fa.ICON_FA_TIMES_CIRCLE)
 		imgui.PopFont()
 		if imgui.IsItemClicked() then
-		lua_thread.create(function()
-		wait(75)
-		window.v = not window.v
-		end) end
+			lua_thread.create(function()
+				wait(75)
+				window.v = not window.v
+			end)
+		end
 		imgui.EndGroup()
 		imgui.BeginGroup()
 		imgui.BeginChild('up', imgui.ImVec2(250, 150), true)
-		imgui.SetCursorPosY(25)
+		imgui.SetCursorPosY(8)
 		imgui.PushFont(fontsize50)
 		imgui.CenterText(fa.ICON_FA_USER_CIRCLE, imgui.GetStyle().Colors[imgui.Col.ButtonActive])
 		imgui.PopFont()
+		--[[if imgui.IsItemClicked() then
+		else
+			imgui.Hint(u8'Ваше имя: '..sampGetPlayerNickname(select(2, sampGetPlayerIdByCharHandle(PLAYER_PED))))
+		end]]
+		imgui.CenterTextColoredRGB('{FFFFFF}Должность:')
 		imgui.CenterTextColoredRGB(sc..cfg.Settings.rank)
-		imgui.CenterTextColoredRGB(sc..'('..cfg.Settings.rankAndNumber..')')
+		imgui.CenterTextColoredRGB('{FFFFFF}Ранг: '..sc..cfg.Settings.rankAndNumber)
 		imgui.NewLine()
 		imgui.SetCursorPosX((imgui.GetWindowWidth() - 100) / 2)
 		if imgui.Button(u8'Обновить', imgui.ImVec2(100,20)) then
@@ -526,6 +553,7 @@ function imgui.OnDrawFrame()
 		if imgui.Button(fa.ICON_FA_USER..u8" Биндер", imgui.ImVec2(250,30)) then menu = 1 end
 		--if imgui.Button(fa.ICON_FA_INFO_CIRCLE..u8" Правила", imgui.ImVec2(250,30)) then menu = 2 end
 		if imgui.Button(fa.ICON_FA_COG..u8" Настройки", imgui.ImVec2(250,30)) then menu = 3 end
+		if imgui.Button(fa.ICON_FA_COMMENTS..u8" Чаты", imgui.ImVec2(250,30)) then menu = 4 end
 		imgui.EndGroup()
 		imgui.SameLine()
 		imgui.BeginGroup()
@@ -645,7 +673,7 @@ function imgui.OnDrawFrame()
 			imgui.EndPopup()
 		end
 		if menu == 3 then
-			imgui.CenterTextColoredRGB(sc..'Настройки скрипта')
+			imgui.CenterTextColoredRGB('Актуальная версия: '..sc..thisScript().version)
 			imgui.CenterTextColoredRGB('Все команды скрипта: '..sc..'/gha')
 			imgui.NewLine()
 			if imgui.CollapsingHeader(u8("Общие настройки")) then
@@ -691,7 +719,10 @@ function imgui.OnDrawFrame()
 			setClipboardText("https://vk.com/id324119075")
 			end
 			end
+			--imgui.Separator()
 			imgui.NewLine()
+			--imgui.SetCursorPosY(imgui.GetWindowWidth() / 1.75)
+			imgui.BeginGroup()
 			if imgui.Button(u8'Перезагрузить скрипт', imgui.ImVec2(190, 30)) then
 			showCursor(false)
 			thisScript():reload()
@@ -705,6 +736,7 @@ function imgui.OnDrawFrame()
 			if imgui.Button(u8'Сбросить настройки', imgui.ImVec2(190,30)) then
 			imgui.OpenPopup(u8'##sbros')
 			end
+			imgui.EndGroup()
 
 			if imgui.BeginPopupModal(u8"##sbros", false, imgui.WindowFlags.NoResize + imgui.WindowFlags.AlwaysAutoResize + imgui.WindowFlags.NoTitleBar) then
 			imgui.TextColoredRGB('Вы уверены, что хотите {FF0000}сбросить{FFFFFF} настройки скрипта?')
@@ -723,6 +755,43 @@ function imgui.OnDrawFrame()
 
 			imgui.EndPopup()
 			end
+		end
+		if menu == 4 then
+			imgui.BeginGroup()
+			if imgui.ColorEdit4(u8'Цвет чата организации', colorChatR, imgui.ColorEditFlags.NoInputs + imgui.ColorEditFlags.NoAlpha) then
+				local clr = imgui.ImColor.FromFloat4(colorChatR.v[1], colorChatR.v[2], colorChatR.v[3], colorChatR.v[4]):GetU32()
+				cfg.Color_Chat.r = clr
+				inicfg.save(cfg, 'Government Helper.ini')
+			end
+			if imgui.ColorEdit4(u8'Цвет чата департамента', colorChatD, imgui.ColorEditFlags.NoInputs + imgui.ColorEditFlags.NoAlpha) then
+				local clr = imgui.ImColor.FromFloat4(colorChatD.v[1], colorChatD.v[2], colorChatD.v[3], colorChatD.v[4]):GetU32()
+				cfg.Color_Chat.d = clr
+				inicfg.save(cfg, 'Government Helper.ini')
+			end
+			imgui.EndGroup()
+			imgui.SameLine()
+			imgui.BeginGroup()
+			if imgui.Button(u8'Сбросить цвет') then
+				cfg.Color_Chat.r = 4282626093
+				inicfg.save(cfg, 'Government Helper.ini')
+				colorChatR = imgui.ImFloat4(imgui.ImColor(cfg.Color_Chat.r):GetFloat4())
+			end
+			imgui.SameLine()
+			if imgui.Button(u8'Тест') then
+				local r, g, b, a = imgui.ImColor(cfg.Color_Chat.r):GetRGBA()
+				sampAddChatMessage('[R] '..cfg.Settings.rank..' '..sampGetPlayerNickname(select(2, sampGetPlayerIdByCharHandle(PLAYER_PED)))..'['..select(2,sampGetPlayerIdByCharHandle(PLAYER_PED))..']: (( Визуальное сообщение ))', join_rgb(r, g, b))
+			end
+			if imgui.Button(u8'Сбросить цвет##d') then
+				cfg.Color_Chat.d = 4294940723
+				inicfg.save(cfg, 'Government Helper.ini')
+				colorChatD = imgui.ImFloat4(imgui.ImColor(cfg.Color_Chat.d):GetFloat4())
+			end
+			imgui.SameLine()
+			if imgui.Button(u8'Тест##d') then
+				local r, g, b, a = imgui.ImColor(cfg.Color_Chat.d):GetRGBA()
+				sampAddChatMessage('[D] '..cfg.Settings.rank..' '..sampGetPlayerNickname(select(2, sampGetPlayerIdByCharHandle(PLAYER_PED)))..'['..select(2,sampGetPlayerIdByCharHandle(PLAYER_PED))..']: Визуальное сообщение', join_rgb(r, g, b))
+			end
+			imgui.EndGroup()
 		end
 		imgui.EndChild()
 		imgui.EndGroup()
@@ -1281,6 +1350,35 @@ end
 
 if sampevcheck then
 	function sampev.onShowDialog(dialogId, style, title, button1, button2, text)
+		--sampAddChatMessage(dialogId..' '..style, -1)
+		if dialogId == 3501 and style == 2 and givepass_id_act then
+			givepass_id_act = false
+			givepass_id_act2 = true
+			sampSendDialogResponse(dialogId, 1, 0, nil)
+			return false
+		end
+		if dialogId == 15043 and style == 2 and givepass_id_act2 then
+			if givepass_id_pol == 'М' then
+				givepass_id_act = false
+				givepass_id_act2 = false
+				givepass_id_act3 = true
+				sampSendDialogResponse(dialogId, 1, 0, nil)
+				return false
+			elseif givepass_id_pol == 'Ж' then
+				givepass_id_act = false
+				givepass_id_act2 = false
+				givepass_id_act3 = true
+				sampSendDialogResponse(dialogId, 1, 1, nil)
+				return false
+			end
+		end
+		if dialogId == 15044 and style == 1 and givepass_id_act3 then
+			givepass_id_act = false
+			givepass_id_act2 = false
+			givepass_id_act3 = false
+			sampSendDialogResponse(dialogId, 1, nil, '1/1/2000')
+			return false
+		end
 		if dialogId == 235 and getRankInStats then
 			if not text:find('Правительство LS') and not owner then
 				lua_thread.create(function()
@@ -1335,6 +1433,24 @@ end
 
 if sampevcheck then
 	function sampev.onServerMessage(color, text)
+		if text:find('^%s*%[Ошибка%] {ffffff}У игрока уже есть паспорт.') then
+			if givepass_id_act3 or givepass_id_act2 or givepass_id_act then
+				givepass_est_pass = true
+			end
+		end
+		if text:find('^%s*%[Ошибка%] {FFFFFF}Вы далеко от игрока!') then
+			if givepass_id_act3 or givepass_id_act2 or givepass_id_act then
+				givepass_est_pass = true
+			end
+		end
+		if text:find('^%s*%[R%]') then
+			local r, g, b, a = imgui.ImColor(cfg.Color_Chat.r):GetRGBA()
+			return { join_argb(r, g, b, a), text }
+		end
+		if text:find('^%s*%[D%]') then
+			local r, g, b, a = imgui.ImColor(cfg.Color_Chat.d):GetRGBA()
+			return { join_argb(r, g, b, a), text }
+		end
 			if text:find('Лидер .+ повысил до %d+ ранга') then
 				lua_thread.create(function()
 					wait(1)
@@ -1439,4 +1555,16 @@ function onScriptTerminate(script, quit)
 		imgui.Process = false
 		showCursor(false, false)
 	end
+end
+
+function join_argb(a, r, g, b)
+    local argb = b  -- b
+    argb = bit.bor(argb, bit.lshift(g, 8))  -- g
+    argb = bit.bor(argb, bit.lshift(r, 16)) -- r
+    argb = bit.bor(argb, bit.lshift(a, 24)) -- a
+    return argb
+end
+
+function join_rgb(r, g, b)
+	return bit.bor(bit.bor(b, bit.lshift(g, 8)), bit.lshift(r, 16))
 end
