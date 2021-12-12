@@ -171,7 +171,7 @@ function main()
 
 	if not checkServer(select(1, sampGetCurrentServerAddress())) then
 		GHsms('Скрипт работает только на проекте '..sc..'Arizona RP')
-		--thisScript():unload()
+		thisScript():unload()
 	else
 		GHsms('Скрипт запущен! Активация - /gh')
 		checkOrg()
