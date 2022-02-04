@@ -1,7 +1,7 @@
 script_name    		('Government Helper')
 script_properties	("work-in-pause")
 script_author  		('Rice.')
-script_version		('1.41')
+script_version		('1.42')
 
 require "moonloader"
 require 'lib.vkeys'
@@ -1227,7 +1227,8 @@ tServers = {
 	'185.169.134.174',
 	'80.66.82.191',
 	'80.66.82.190',
-	'80.66.82.188'
+	'80.66.82.188',
+	'80.66.82.168'
 }
 
 function checkServer(ip)
